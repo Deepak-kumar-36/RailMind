@@ -1,96 +1,65 @@
 import { GoogleGenAI } from "@google/genai";
 import { env } from "../config/env";
 import type { 
-  IncidentType, TrainRealData, ImpactAnalysis, DriverNotification, 
-  OperationalRecs, PassengerMetrics, NetworkStatus, 
-  PredictiveForecast, Explainability 
+  IncidentType, TrainRealData,
+  OperationalRecs, PredictiveForecast, Explainability 
 } from "@railmind/shared";
+import type { CalculatedImpactData } from "./impactEngine";
 
 export type TrainIntelligenceResponse = {
-  impactAnalysis: ImpactAnalysis;
-  driverNotifications: DriverNotification[];
   operationalRecs: OperationalRecs;
-  passengerMetrics: PassengerMetrics;
-  network: NetworkStatus;
   predictiveForecast: PredictiveForecast[];
   explainability: Explainability[];
 };
 
 export async function analyzeTrainIncidentWithGemini(
   incidentType: IncidentType,
-  trainData: TrainRealData
+  trainData: TrainRealData,
+  impactData: CalculatedImpactData,
+  weatherSummary?: string
 ): Promise<TrainIntelligenceResponse> {
   if (!env.geminiApiKey) {
     console.log("[Gemini] No API key provided. Using simulated fallback.");
-    return generateFallback(incidentType, trainData);
+    return generateFallback(incidentType, trainData, impactData);
   }
+
+  const now = new Date();
+  const timeString = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+  const dateString = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
 
   const ai = new GoogleGenAI({ apiKey: env.geminiApiKey });
 
   const prompt = `
-You are the RAILMIND Real Railway Intelligence Layer.
-A disaster incident has been declared for a specific train.
+You are the RAILMIND Emergency Intelligence Agent.
+A disaster incident has been declared. We have already calculated the geographic and network impact.
+Your job is to provide Operational Recommendations, a Predictive Forecast, and Explainability for your decisions.
+Provide time-sensitive and geographically relevant instructions.
+
+CURRENT TIME (IST): ${dateString} ${timeString}
 
 TRAIN DATA:
 Train Number: ${trainData.trainNumber}
 Train Name: ${trainData.trainName}
 Current Status: ${trainData.runningStatus}
-Current Position: ${trainData.currentPosition[0]}, ${trainData.currentPosition[1]}
-Current Route Station: ${trainData.route.find(r => r.status === 'current')?.name || 'Unknown'}
+Last Known Position (Lat/Lng): ${trainData.currentPosition[0]}, ${trainData.currentPosition[1]}
 
 INCIDENT TYPE: ${incidentType}
+
+CALCULATED IMPACT:
+Affected Stations: ${impactData.impactAnalysis.affectedStations.join(", ")}
+Nearby Trains: ${impactData.impactAnalysis.nearbyTrains.join(", ")}
+Risk Level: ${impactData.impactAnalysis.riskLevel}
+
+${weatherSummary ? `WEATHER CONDITIONS:\n${weatherSummary}\n\nIMPORTANT: Factor weather conditions into your recommendations. If there are weather alerts, include specific weather-related safety instructions for train drivers.` : ''}
 
 You must return ONLY a valid JSON object matching the exact structure below. Do not include markdown formatting like \`\`\`json.
 
 {
-  "impactAnalysis": {
-    "affectedSegment": string,
-    "impactRadius": string,
-    "affectedStations": [string],
-    "nearbyTrains": [string],
-    "incomingTrains": [string],
-    "outgoingTrains": [string],
-    "riskLevel": "low" | "guarded" | "elevated" | "critical",
-    "incidentCoordinates": [number, number],
-    "affectedCorridorCoordinates": [[number, number]],
-    "whyTheseTrains": [
-      {
-        "trainNumber": string,
-        "distanceFromIncident": string,
-        "timeToEnterCorridor": string,
-        "riskLevel": "low" | "guarded" | "elevated" | "critical"
-      }
-    ]
-  },
-  "driverNotifications": [
-    {
-      "trainNumber": string,
-      "priority": "High" | "Medium" | "Low",
-      "status": "Pending" | "Sent" | "Acknowledged" | "Delivered"
-    }
-  ],
   "operationalRecs": {
     "priority": "Critical" | "High" | "Medium" | "Low",
     "actions": [string],
     "confidence": number,
     "expectedOutcome": string
-  },
-  "passengerMetrics": {
-    "affectedTrains": number,
-    "affectedStations": number,
-    "passengersImpacted": number,
-    "estimatedDelay": string,
-    "recoveryEta": string
-  },
-  "network": {
-    "networkHealth": number,
-    "activeIncidents": number,
-    "trainsAffected": number,
-    "trainsHalted": number,
-    "trainsRerouted": number,
-    "resourcesDeployed": number,
-    "passengersImpacted": number,
-    "recoveryEta": string
   },
   "predictiveForecast": [
     {
@@ -112,95 +81,78 @@ You must return ONLY a valid JSON object matching the exact structure below. Do 
 }
 `;
 
-  try {
-    console.log(`[Gemini] Calling Gemini API for ${incidentType} on train ${trainData.trainNumber}...`);
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
+  // Model fallback chain — try multiple models if one is overloaded
+  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+  const MAX_RETRIES = 2;
+  
+  for (const model of MODELS) {
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`[Gemini] Calling ${model} (attempt ${attempt + 1}) for ${incidentType} on train ${trainData.trainNumber}...`);
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
+
+        const text = response.text || "";
+        const parsed = JSON.parse(text) as TrainIntelligenceResponse;
+
+        console.log(`[Gemini] ✅ Successfully generated response via ${model} for ${trainData.trainNumber}`);
+        return parsed;
+      } catch (error: any) {
+        const status = error?.status || error?.httpStatusCode;
+        const isRetryable = status === 503 || status === 429 || status === 500;
+        
+        if (isRetryable && attempt < MAX_RETRIES) {
+          const backoffMs = 1000 * Math.pow(2, attempt); // 1s, 2s
+          console.warn(`[Gemini] ${model} returned ${status}. Retrying in ${backoffMs}ms...`);
+          await new Promise(r => setTimeout(r, backoffMs));
+          continue;
+        }
+        
+        if (isRetryable) {
+          console.warn(`[Gemini] ${model} exhausted retries. Trying next model...`);
+          break; // move to next model
+        }
+        
+        // Non-retryable error (e.g. bad JSON parse, 400 bad request)
+        console.error(`[Gemini] ${model} failed with non-retryable error:`, error.message || error);
+        break; // move to next model
       }
-    });
-
-    const text = response.text || "";
-    const parsed = JSON.parse(text) as TrainIntelligenceResponse;
-
-    console.log(`[Gemini] Successfully generated response for ${trainData.trainNumber}`);
-    return parsed;
-  } catch (error) {
-    console.error("[Gemini] Failed to generate or parse response. Falling back.", error);
-    return generateFallback(incidentType, trainData);
+    }
   }
+
+  console.error("[Gemini] All models exhausted. Using intelligent fallback.");
+  return generateFallback(incidentType, trainData, impactData);
 }
 
-function generateFallback(type: IncidentType, train: TrainRealData): TrainIntelligenceResponse {
-  const currentSt = train.route.find(r => r.status === 'current') || train.route[0];
-  const nextSt = train.route.find(r => r.status === 'upcoming') || train.route[train.route.length - 1];
-  
+function generateFallback(type: IncidentType, train: TrainRealData, impact: CalculatedImpactData): TrainIntelligenceResponse {
   return {
-    impactAnalysis: {
-      affectedSegment: `${currentSt.name} - ${nextSt.name}`,
-      impactRadius: "25km",
-      affectedStations: [currentSt.name, nextSt.name],
-      nearbyTrains: ["12951", "22436"],
-      incomingTrains: ["12004"],
-      outgoingTrains: ["12269"],
-      riskLevel: "critical",
-      incidentCoordinates: train.currentPosition,
-      affectedCorridorCoordinates: [[currentSt.lat, currentSt.lng], [nextSt.lat, nextSt.lng]],
-      whyTheseTrains: [
-        {
-          trainNumber: "12951",
-          distanceFromIncident: "12 km",
-          timeToEnterCorridor: "15 min",
-          riskLevel: "critical"
-        }
-      ]
-    },
-    driverNotifications: [
-      { trainNumber: train.trainNumber, priority: "High", status: "Delivered" },
-      { trainNumber: "12951", priority: "High", status: "Acknowledged" },
-      { trainNumber: "22436", priority: "Medium", status: "Pending" }
-    ],
     operationalRecs: {
-      priority: "Critical",
+      priority: impact.impactAnalysis.riskLevel === "critical" ? "Critical" : "High",
       actions: [
         `Halt Train ${train.trainNumber} immediately`,
-        "Divert 12951 to alternate route via Bina",
+        `Divert incoming trains: ${impact.impactAnalysis.incomingTrains.join(", ") || "None"}`,
         "Dispatch Disaster Response Team (NDRF)"
       ],
       confidence: 94,
       expectedOutcome: "Collision risk prevented and immediate medical relief deployed."
     },
-    passengerMetrics: {
-      affectedTrains: 7,
-      affectedStations: 4,
-      passengersImpacted: 4820,
-      estimatedDelay: "2h 45m",
-      recoveryEta: "2h 15m"
-    },
-    network: {
-      networkHealth: 68,
-      activeIncidents: 1,
-      trainsAffected: 7,
-      trainsHalted: 2,
-      trainsRerouted: 1,
-      resourcesDeployed: 12,
-      passengersImpacted: 4820,
-      recoveryEta: "2h 15m"
-    },
     predictiveForecast: [
-      { timeframe: "15min", networkImpact: "Local segment locked", affectedTrains: 2, expectedDelays: "45m", recoveryForecast: "Evaluating damage" },
-      { timeframe: "30min", networkImpact: "Regional cascading delays", affectedTrains: 4, expectedDelays: "90m", recoveryForecast: "Clearance starting" },
-      { timeframe: "60min", networkImpact: "Diversion routes congested", affectedTrains: 7, expectedDelays: "120m", recoveryForecast: "Track reopening estimated" },
-      { timeframe: "120min", networkImpact: "Normalizing", affectedTrains: 3, expectedDelays: "15m", recoveryForecast: "Operations restoring" }
+      { timeframe: "15min", networkImpact: "Local segment locked", affectedTrains: impact.passengerMetrics.affectedTrains, expectedDelays: "45m", recoveryForecast: "Evaluating damage" },
+      { timeframe: "30min", networkImpact: "Regional cascading delays", affectedTrains: impact.passengerMetrics.affectedTrains + 2, expectedDelays: "90m", recoveryForecast: "Clearance starting" },
+      { timeframe: "60min", networkImpact: "Diversion routes congested", affectedTrains: impact.passengerMetrics.affectedTrains + 5, expectedDelays: "120m", recoveryForecast: "Track reopening estimated" },
+      { timeframe: "120min", networkImpact: "Normalizing", affectedTrains: impact.passengerMetrics.affectedTrains, expectedDelays: "15m", recoveryForecast: "Operations restoring" }
     ],
     explainability: [
       {
-        decision: `Halt Train 12951`,
-        reason: "Entering affected corridor within 15 minutes.",
-        confidence: 96,
-        expectedImpact: "Prevents secondary collision risk."
+        decision: `Halt Train ${train.trainNumber}`,
+        reason: "Primary train involved in incident.",
+        confidence: 99,
+        expectedImpact: "Prevents further damage."
       }
     ]
   };

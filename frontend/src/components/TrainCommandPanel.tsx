@@ -115,6 +115,9 @@ export function TrainCommandPanel() {
               </div>
             </div>
 
+            {/* ── WEATHER INTELLIGENCE ── */}
+            <WeatherSection />
+
             {/* ── EMERGENCY COMMAND ── */}
             <div className="px-md py-md">
               <p className="mb-sm text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
@@ -172,6 +175,70 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-md">
       <span className="shrink-0 text-[12px] text-on-surface-variant">{label}</span>
       <span className="truncate text-[13px] font-medium text-on-surface">{value}</span>
+    </div>
+  );
+}
+
+/* ── Weather Intelligence Section ── */
+function WeatherSection() {
+  const { weatherReport } = useTrainIntel();
+
+  if (!weatherReport) return null;
+
+  const riskColor = {
+    safe: "text-status-safe",
+    caution: "text-status-warning",
+    danger: "text-status-critical"
+  };
+
+  const riskBg = {
+    safe: "bg-status-safe/10 border-status-safe/30",
+    caution: "bg-status-warning/10 border-status-warning/30",
+    danger: "bg-status-critical/10 border-status-critical/30"
+  };
+
+  return (
+    <div className="border-b border-outline-variant px-md py-md">
+      <div className="mb-sm flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
+          Weather Intel
+        </p>
+        <span className={`text-[10px] font-bold uppercase tracking-wider ${riskColor[weatherReport.overallRisk]}`}>
+          {weatherReport.overallRisk}
+        </span>
+      </div>
+
+      <div className="space-y-[4px]">
+        {weatherReport.stationWeather.map((sw, i) => (
+          <div
+            key={i}
+            className={`rounded px-sm py-[5px] border ${
+              sw.riskLevel === "safe"
+                ? "bg-surface-container border-transparent"
+                : riskBg[sw.riskLevel]
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-on-surface">{sw.stationName}</span>
+              <div className="flex items-center gap-xs">
+                <span className="font-mono text-[11px] text-on-surface-variant">{sw.temp}°C</span>
+                <span className={`text-[10px] font-semibold uppercase ${riskColor[sw.riskLevel]}`}>
+                  {sw.condition}
+                </span>
+              </div>
+            </div>
+            {sw.alerts.length > 0 && (
+              <div className="mt-[3px] space-y-[1px]">
+                {sw.alerts.map((alert, j) => (
+                  <p key={j} className={`text-[10px] leading-snug ${riskColor[sw.riskLevel]}`}>
+                    {alert}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

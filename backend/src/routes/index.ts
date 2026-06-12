@@ -4,6 +4,7 @@ import { healthRouter } from "./health";
 import { incidentsRouter } from "./incidents";
 import { networkRouter } from "./network";
 import { trainsRouter } from "./trains";
+import { reportsRouter } from "./reports";
 
 export function createApiRouter() {
   const router = Router();
@@ -13,6 +14,7 @@ export function createApiRouter() {
   router.use("/approvals", approvalsRouter);
   router.use("/network", networkRouter);
   router.use("/trains", trainsRouter);
+  router.use("/reports", reportsRouter);
 
   return router;
 }

@@ -12,7 +12,9 @@ import type {
   PassengerMetrics,
   TimelineEvent,
   PredictiveForecast,
-  Explainability
+  Explainability,
+  RouteWeatherReport,
+  TranslatedNotifications
 } from "@railmind/shared";
 import { SOCKET_URL } from "./socket";
 
@@ -25,6 +27,7 @@ type TrainIntelState = {
   isFetchingTrain: boolean;
   
   // Incident & AI Output State
+  activeIncidentId: string | null;
   activeIncidentType: IncidentType | null;
   isProcessing: boolean;
   intelStatusMsg: string;
@@ -35,12 +38,15 @@ type TrainIntelState = {
   predictiveForecast: PredictiveForecast[] | null;
   explainability: Explainability[] | null;
   timelineEvents: TimelineEvent[];
+  weatherReport: RouteWeatherReport | null;
+  translatedNotifications: TranslatedNotifications | null;
 };
 
 type TrainIntelContextValue = TrainIntelState & {
   searchTrain: (trainNumber: string) => Promise<void>;
   triggerTrainIncident: (type: IncidentType) => void;
   clearAll: () => void;
+  approveAndDispatch: () => void;
 };
 
 const DEFAULT_NETWORK: NetworkStatus = {
@@ -70,6 +76,7 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
   const [activeTrain, setActiveTrain] = useState<TrainRealData | null>(null);
   const [isFetchingTrain, setIsFetchingTrain] = useState(false);
 
+  const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null);
   const [activeIncidentType, setActiveIncidentType] = useState<IncidentType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [intelStatusMsg, setIntelStatusMsg] = useState("");
@@ -81,6 +88,8 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
   const [predictiveForecast, setPredictiveForecast] = useState<PredictiveForecast[] | null>(null);
   const [explainability, setExplainability] = useState<Explainability[] | null>(null);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>([]);
+  const [weatherReport, setWeatherReport] = useState<RouteWeatherReport | null>(null);
+  const [translatedNotifications, setTranslatedNotifications] = useState<TranslatedNotifications | null>(null);
 
   useEffect(() => {
     const socket = io(SOCKET_URL);
@@ -95,13 +104,20 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
       setTimelineEvents(prev => [event, ...prev]);
     });
 
+    socket.on("train_intel:start", (data: { incidentId: string }) => setActiveIncidentId(data.incidentId));
     socket.on("train_intel:status", (msg: string) => setIntelStatusMsg(msg));
     socket.on("train_intel:impact", (data: ImpactAnalysis) => setImpactAnalysis(data));
     socket.on("train_intel:drivers", (data: DriverNotification[]) => setDriverNotifications(data));
     socket.on("train_intel:ops", (data: OperationalRecs) => setOperationalRecs(data));
+    
+    socket.on("dispatch:success", () => {
+      setDriverNotifications(prev => prev ? prev.map(d => ({ ...d, status: "Acknowledged" })) : null);
+    });
     socket.on("train_intel:passengers", (data: PassengerMetrics) => setPassengerMetrics(data));
     socket.on("train_intel:forecast", (data: PredictiveForecast[]) => setPredictiveForecast(data));
     socket.on("train_intel:explain", (data: Explainability[]) => setExplainability(data));
+    socket.on("train_intel:weather", (data: RouteWeatherReport) => setWeatherReport(data));
+    socket.on("train_intel:translations", (data: TranslatedNotifications) => setTranslatedNotifications(data));
     
     socket.on("train_intel:completed", () => {
       setIsProcessing(false);
@@ -124,6 +140,8 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
     setPredictiveForecast(null);
     setExplainability(null);
     setTimelineEvents([]);
+    setWeatherReport(null);
+    setTranslatedNotifications(null);
   }, []);
 
   const searchTrain = useCallback(async (trainNumber: string) => {
@@ -164,6 +182,11 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
     setNetwork(DEFAULT_NETWORK);
   }, [clearIntel]);
 
+  const approveAndDispatch = useCallback(() => {
+    if (!activeIncidentId) return;
+    socketRef.current?.emit("dispatch:approved", { incidentId: activeIncidentId });
+  }, [activeIncidentId]);
+
   return (
     <TrainIntelContext.Provider
       value={{
@@ -171,6 +194,7 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
         network,
         activeTrain,
         isFetchingTrain,
+        activeIncidentId,
         activeIncidentType,
         isProcessing,
         intelStatusMsg,
@@ -181,9 +205,12 @@ export function IncidentProvider({ children }: { children: React.ReactNode }) {
         predictiveForecast,
         explainability,
         timelineEvents,
+        weatherReport,
+        translatedNotifications,
         searchTrain,
         triggerTrainIncident,
-        clearAll
+        clearAll,
+        approveAndDispatch
       }}
     >
       {children}

@@ -159,3 +159,33 @@ export type DriverNotification = {
   status: "Pending" | "Sent" | "Acknowledged" | "Delivered";
 };
 
+export type StationWeather = {
+  stationName: string;
+  stationCode: string;
+  temp: number;
+  humidity: number;
+  windSpeed: number;
+  condition: string;
+  icon: string;
+  visibility: number;
+  riskLevel: "safe" | "caution" | "danger";
+  alerts: string[];
+};
+
+export type RouteWeatherReport = {
+  stationWeather: StationWeather[];
+  overallRisk: "safe" | "caution" | "danger";
+  summary: string;
+};
+
+export type DriverNotificationWithMessage = DriverNotification & {
+  message: string;
+};
+
+export type TranslatedNotifications = {
+  en: DriverNotificationWithMessage[];
+  hi: DriverNotificationWithMessage[];
+  regional: DriverNotificationWithMessage[];
+  regionalLanguage: string;
+};
+

@@ -65,8 +65,8 @@ export async function saveTimelineEvent(incidentId: string, event: TimelineEvent
   if (!isDbConfigured()) return;
   await query(
     `INSERT INTO timeline_events (id, incident_id, agent_id, event_description, timestamp)
-     VALUES ($1, $2, $3, $4, $5)`,
-    [event.id, incidentId, event.agentId || null, event.description, event.timestamp]
+     VALUES ($1, $2, $3, $4, NOW())`,
+    [event.id, incidentId, event.agentId || null, event.description]
   );
 }
 
@@ -99,7 +99,14 @@ export async function saveExplainableDecision(incidentId: string, decision: Expl
   await query(
     `INSERT INTO explainable_decisions (id, incident_id, decision, confidence, reason, expected_impact)
      VALUES ($1, $2, $3, $4, $5, $6)`,
-    [`${incidentId}-decision-${Date.now()}`, incidentId, decision.decision, decision.confidence, decision.reason, decision.expectedImpact]
+    [
+      `${incidentId}-decision-${Date.now()}`, 
+      incidentId, 
+      decision.decision, 
+      decision.confidence <= 1 ? Math.round(decision.confidence * 100) : Math.round(decision.confidence), 
+      decision.reason, 
+      decision.expectedImpact
+    ]
   );
 }
 

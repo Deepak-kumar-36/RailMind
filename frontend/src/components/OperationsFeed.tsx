@@ -14,6 +14,7 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 
 export function OperationsFeed() {
   const {
+    activeIncidentId,
     activeIncidentType,
     intelStatusMsg,
     isProcessing,
@@ -21,9 +22,17 @@ export function OperationsFeed() {
     driverNotifications,
     explainability,
     timelineEvents,
+    approveAndDispatch,
   } = useTrainIntel();
 
   const [activeTab, setActiveTab] = useState<Tab>("actions");
+  const [dispatchSuccess, setDispatchSuccess] = useState(false);
+
+  const handleDispatch = () => {
+    approveAndDispatch();
+    setDispatchSuccess(true);
+    setTimeout(() => setDispatchSuccess(false), 3000);
+  };
 
   /* ── Empty state ── */
   if (!activeIncidentType) {
@@ -53,7 +62,13 @@ export function OperationsFeed() {
 
   /* ── Active state with tabs ── */
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-surface-container-lowest">
+    <div className="flex h-full flex-col overflow-hidden bg-surface-container-lowest relative">
+      {dispatchSuccess && (
+        <div className="absolute top-4 right-4 bg-status-safe text-surface-container-lowest px-4 py-2 rounded shadow-lg text-xs font-semibold uppercase tracking-widest z-50 animate-fade-in flex items-center gap-2">
+          <span className="material-symbols-outlined text-base">check_circle</span>
+          Dispatched successfully
+        </div>
+      )}
       {/* Panel Header */}
       <div className="shrink-0 border-b border-outline-variant bg-surface-container-low px-md py-sm">
         <div className="flex items-center justify-between">
@@ -78,7 +93,7 @@ export function OperationsFeed() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex flex-1 items-center justify-center gap-[4px] py-sm text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+            className={`flex flex-1 items-center justify-center gap-[4px] py-sm text-[11px] font-semibold uppercase tracking-wider transition-colors \${
               activeTab === tab.key
                 ? "border-b-2 border-primary text-primary"
                 : "text-on-surface-variant hover:text-on-surface"
@@ -98,18 +113,27 @@ export function OperationsFeed() {
         {activeTab === "explain" && <ExplainTab data={explainability} />}
       </div>
 
-      {/* Footer: Dispatch Button */}
+      {/* Footer: Dispatch + Report Buttons */}
       {!isProcessing && operationalRecs && (
-        <div className="shrink-0 border-t border-outline-variant p-md">
+        <div className="shrink-0 border-t border-outline-variant p-md space-y-[6px]">
           <button
-            onClick={() =>
-              alert("Actions dispatched to Train Masters & Station Managers!")
-            }
+            onClick={handleDispatch}
             className="flex w-full items-center justify-center gap-sm rounded bg-primary py-sm text-[13px] font-semibold text-on-primary transition-opacity hover:opacity-90"
           >
             <span className="material-symbols-outlined text-[16px]">send</span>
             Approve & Dispatch
           </button>
+          {activeIncidentId && (
+            <a
+              href={`http://localhost:4000/api/reports/${activeIncidentId}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-sm rounded border border-outline-variant bg-surface-container py-sm text-[13px] font-semibold text-on-surface transition-colors hover:border-primary hover:text-primary"
+            >
+              <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+              Download PDF Report
+            </a>
+          )}
         </div>
       )}
     </div>
@@ -174,43 +198,92 @@ function ActionsTab({
   );
 }
 
-/* ─────────────────────── TAB: Drivers ─────────────────────── */
+/* ─────────────────────── TAB: Drivers (Multi-Language) ─────────────────────── */
 function DriversTab({
   notifications,
 }: {
   notifications: ReturnType<typeof useTrainIntel>["driverNotifications"];
 }) {
+  const { translatedNotifications } = useTrainIntel();
+  const [lang, setLang] = useState<"en" | "hi" | "regional">("en");
+
   if (!notifications) {
     return <EmptyTab message="Waiting for driver notification list…" />;
   }
 
+  const langLabels: Record<string, string> = {
+    en: "EN",
+    hi: "हिं",
+    regional: translatedNotifications?.regionalLanguage?.slice(0, 3).toUpperCase() || "REG"
+  };
+
+  // Get translated notifications if available
+  const currentNotifications = translatedNotifications
+    ? translatedNotifications[lang]
+    : null;
+
   return (
-    <div className="animate-fade-in space-y-[4px]">
-      {notifications.map((n, i) => (
-        <div
-          key={i}
-          className="flex items-center justify-between rounded bg-surface-container px-sm py-[6px]"
-        >
-          <div className="flex items-center gap-xs">
-            <span className="material-symbols-outlined text-[14px] text-on-surface-variant">
-              train
-            </span>
-            <span className="text-[13px] font-medium text-on-surface">{n.trainNumber}</span>
-          </div>
-          <span
-            className={`flex items-center gap-[3px] text-[11px] font-semibold uppercase tracking-wider ${
-              n.status === "Delivered" || n.status === "Acknowledged"
-                ? "text-status-safe"
-                : "text-status-warning"
-            }`}
-          >
-            {n.status}
-            <span className="material-symbols-outlined text-[12px]">
-              {n.status === "Delivered" || n.status === "Acknowledged" ? "check" : "warning"}
-            </span>
-          </span>
+    <div className="animate-fade-in space-y-sm">
+      {/* Language Toggle */}
+      {translatedNotifications && (
+        <div className="flex items-center gap-[4px] rounded bg-surface-container p-[3px]">
+          {(["en", "hi", "regional"] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`flex-1 rounded px-sm py-[4px] text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                lang === l
+                  ? "bg-primary text-on-primary"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              {langLabels[l]}
+              {l === "regional" && translatedNotifications.regionalLanguage && (
+                <span className="ml-[3px] text-[8px] normal-case opacity-70">
+                  {translatedNotifications.regionalLanguage}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-      ))}
+      )}
+
+      {/* Notification Cards */}
+      <div className="space-y-[4px]">
+        {(currentNotifications || notifications).map((n, i) => (
+          <div
+            key={i}
+            className="rounded bg-surface-container px-sm py-[6px]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-xs">
+                <span className="material-symbols-outlined text-[14px] text-on-surface-variant">
+                  train
+                </span>
+                <span className="text-[13px] font-medium text-on-surface">{n.trainNumber}</span>
+              </div>
+              <span
+                className={`flex items-center gap-[3px] text-[11px] font-semibold uppercase tracking-wider ${
+                  n.status === "Delivered" || n.status === "Acknowledged"
+                    ? "text-status-safe"
+                    : "text-status-warning"
+                }`}
+              >
+                {n.status}
+                <span className="material-symbols-outlined text-[12px]">
+                  {n.status === "Delivered" || n.status === "Acknowledged" ? "check" : "warning"}
+                </span>
+              </span>
+            </div>
+            {/* Show translated message if available */}
+            {"message" in n && (n as any).message && (
+              <p className="mt-[3px] text-[11px] leading-snug text-on-surface-variant">
+                {(n as any).message}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

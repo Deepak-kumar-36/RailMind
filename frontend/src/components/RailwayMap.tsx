@@ -55,6 +55,13 @@ const trainIcon = L.divIcon({
   iconAnchor: [9, 9]
 });
 
+const activeTrainIcon = L.divIcon({
+  className: "active-train-marker",
+  html: "<span></span>",
+  iconSize: [22, 22],
+  iconAnchor: [11, 11]
+});
+
 export function RailwayMap() {
   const [trains, setTrains] = useState(INITIAL_TRAINS);
   const { activeTrain, impactAnalysis } = useTrainIntel();
@@ -167,11 +174,11 @@ export function RailwayMap() {
               </Popup>
             </Marker>
           ))}
-          <Marker position={activeTrain.currentPosition} icon={trainIcon}>
+          <Marker position={activeTrain.currentPosition} icon={activeTrainIcon}>
             <Popup>
               <strong>{activeTrain.trainNumber} - {activeTrain.trainName}</strong>
               <br />
-              Status: {activeTrain.runningStatus}
+              Status: <span className="uppercase text-[11px] font-bold text-status-critical tracking-wider">Live Tracking</span>
             </Popup>
           </Marker>
         </>
