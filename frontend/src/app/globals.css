@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap");
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: "Geist", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Leaflet Map ── */
+.leaflet-container {
+  background: #080f17;
+  font-family: inherit;
+}
+
+.leaflet-control-zoom a {
+  background: #192029 !important;
+  border-color: #434655 !important;
+  color: #dce3f0 !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #232a34 !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #192029;
+  color: #dce3f0;
+  border: 1px solid #434655;
+  box-shadow: none;
+  border-radius: 4px;
+}
+
+.leaflet-popup-content-wrapper {
+  padding: 4px;
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.leaflet-popup-close-button {
+  color: #8d90a0 !important;
+}
+
+/* ── Station & Train Markers ── */
+.station-marker span,
+.train-marker span {
+  display: block;
+  border-radius: 999px;
+}
+
+.station-marker span {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #0d141d;
+  background: #b4c5ff;
+  box-shadow: 0 0 12px rgba(180, 197, 255, 0.5);
+}
+
+.train-marker span {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #0d141d;
+  background: #dce3f0;
+  box-shadow: 0 0 14px rgba(220, 227, 240, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #434655;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8d90a0;
+}
+
+/* ── Timeline connector ── */
+.timeline-line {
+  position: absolute;
+  left: 7px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #434655;
+}
+
+/* ── Agent status indicator ── */
+@keyframes agentPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+}
+
+.agent-analyzing {
+  animation: agentPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Confidence bar fill ── */
+.confidence-fill {
+  transition: width 0.8s ease-out;
+}
+
+/* ── Modal backdrop ── */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Material Symbols ── */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
