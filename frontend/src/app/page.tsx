@@ -5,29 +5,35 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { DigitalTwin } from "@/components/DigitalTwin";
 import { TrainCommandPanel } from "@/components/TrainCommandPanel";
 import { OperationsFeed } from "@/components/OperationsFeed";
-import { PredictiveMetrics } from "@/components/PredictiveMetrics";
+import { StatusBar } from "@/components/StatusBar";
 
 export default function HomePage() {
   return (
     <IncidentProvider>
-      <div className="flex min-h-screen flex-col bg-surface">
+      <div className="flex h-screen flex-col overflow-hidden bg-surface">
         {/* ── Header ── */}
         <DashboardHeader />
 
-        {/* ── Main Grid ── */}
-        <main className="flex-grow px-lg py-lg">
-          <div className="mx-auto flex w-full max-w-[1800px] flex-col gap-lg">
-            {/* Top Triple-Column Row */}
-            <div className="grid h-[600px] gap-[1px] lg:grid-cols-[300px_1fr_400px]">
-              <TrainCommandPanel />
-              <DigitalTwin />
-              <OperationsFeed />
-            </div>
+        {/* ── Main Command Center ── */}
+        <main className="flex min-h-0 flex-1">
+          {/* Left Panel: Command + Telemetry */}
+          <aside className="flex w-[320px] shrink-0 flex-col border-r border-outline-variant">
+            <TrainCommandPanel />
+          </aside>
 
-            {/* Bottom Row: Metrics & Forecast */}
-            <PredictiveMetrics />
-          </div>
+          {/* Center: Railway Digital Twin Map */}
+          <section className="relative flex min-w-0 flex-1 flex-col">
+            <DigitalTwin />
+          </section>
+
+          {/* Right Panel: Operations Intelligence Feed */}
+          <aside className="flex w-[380px] shrink-0 flex-col border-l border-outline-variant">
+            <OperationsFeed />
+          </aside>
         </main>
+
+        {/* ── Bottom Status Bar ── */}
+        <StatusBar />
       </div>
     </IncidentProvider>
   );

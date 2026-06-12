@@ -75,14 +75,15 @@ export function RailwayMap() {
   const routeLines = useMemo(() => INITIAL_TRAINS.map((train) => train.route), []);
 
   return (
-    <div className="h-full w-full overflow-hidden rounded border border-outline-variant">
+    <div className="h-full w-full overflow-hidden">
       <MapContainer
         center={INDIA_CENTER}
         zoom={5}
         minZoom={4}
         maxZoom={8}
         scrollWheelZoom
-        className="h-full w-full z-0"
+        className="h-full w-full"
+        style={{ zIndex: 0 }}
       >
       <TileLayer
         attribution="&copy; OpenStreetMap &copy; CARTO"

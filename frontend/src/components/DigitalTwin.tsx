@@ -9,22 +9,24 @@ const RailwayMap = dynamic(
 
 export function DigitalTwin() {
   return (
-    <section className="relative flex flex-col bg-surface-container-lowest">
-      <div className="flex items-center justify-between border-b border-outline-variant px-lg py-md">
+    <div className="relative flex h-full w-full flex-col" style={{ isolation: "isolate" }}>
+      {/* Header */}
+      <div className="flex shrink-0 items-center justify-between border-b border-outline-variant bg-surface-container-low px-md py-sm">
         <h2 className="text-label-sm uppercase tracking-widest text-on-surface-variant">
           Railway Digital Twin
         </h2>
         <div className="flex items-center gap-xs text-on-surface-variant">
-          <span className="material-symbols-outlined text-base">satellite</span>
-          <span className="text-mono-data text-xs">LIVE FEED</span>
+          <span className="inline-block h-[6px] w-[6px] animate-pulse rounded-full bg-status-safe" />
+          <span className="font-mono text-[11px] uppercase tracking-wider opacity-80">
+            Live Feed
+          </span>
         </div>
       </div>
-      <div className="relative flex-grow">
+
+      {/* Map — contained inside with overflow hidden */}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
         <RailwayMap />
-        
-        {/* Overlay scanning effect */}
-        <div className="pointer-events-none absolute inset-0 z-[400] bg-[linear-gradient(transparent_0%,rgba(59,130,246,0.03)_50%,transparent_100%)] bg-[length:100%_4px] mix-blend-screen" />
       </div>
-    </section>
+    </div>
   );
 }

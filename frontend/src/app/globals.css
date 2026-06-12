@@ -8,17 +8,62 @@
   color-scheme: dark;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
   font-family: "Geist", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Leaflet Map ── */
+/* ── Leaflet Map Containment ── */
 .leaflet-container {
   background: #080f17;
   font-family: inherit;
+  z-index: 0 !important;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 6 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 7 !important;
 }
 
 .leaflet-control-zoom a {
@@ -36,7 +81,7 @@ body {
   background: #192029;
   color: #dce3f0;
   border: 1px solid #434655;
-  box-shadow: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   border-radius: 4px;
 }
 
@@ -67,7 +112,7 @@ body {
   height: 14px;
   border: 2px solid #0d141d;
   background: #b4c5ff;
-  box-shadow: 0 0 12px rgba(180, 197, 255, 0.5);
+  box-shadow: 0 0 8px rgba(180, 197, 255, 0.4);
 }
 
 .train-marker span {
@@ -75,14 +120,14 @@ body {
   height: 18px;
   border: 2px solid #0d141d;
   background: #dce3f0;
-  box-shadow: 0 0 14px rgba(220, 227, 240, 0.4);
+  box-shadow: 0 0 10px rgba(220, 227, 240, 0.3);
   transition: all 0.3s ease;
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -91,21 +136,17 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #434655;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #8d90a0;
 }
 
-/* ── Timeline connector ── */
-.timeline-line {
-  position: absolute;
-  left: 7px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: #434655;
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #434655 transparent;
 }
 
 /* ── Agent status indicator ── */
@@ -121,12 +162,6 @@ body {
 /* ── Confidence bar fill ── */
 .confidence-fill {
   transition: width 0.8s ease-out;
-}
-
-/* ── Modal backdrop ── */
-.modal-backdrop {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
 }
 
 /* ── Material Symbols ── */
