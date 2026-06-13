@@ -31,15 +31,15 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="shrink-0 border-b border-outline-variant bg-surface-container-low">
+    <header className="shrink-0 z-50 glass-panel neon-border-bottom border-b-0 rounded-none relative">
       <div className="flex items-center justify-between px-md py-[8px]">
         {/* Left: Logo + Connection */}
         <div className="flex items-center gap-md">
           <div className="flex items-baseline gap-sm">
-            <h1 className="text-[18px] font-bold tracking-tight text-on-surface">
+            <h1 className="text-[18px] font-bold tracking-[0.1em] text-on-surface" style={{textShadow: "0 0 10px rgba(180, 197, 255, 0.4)"}}>
               RAILMIND
             </h1>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-primary">
               Emergency Intelligence
             </span>
           </div>
@@ -65,7 +65,7 @@ export function DashboardHeader() {
                 placeholder="Train Number (e.g. 12301)"
                 value={trainQuery}
                 onChange={(e) => setTrainQuery(e.target.value)}
-                className="w-full rounded bg-surface-container px-sm py-[5px] pl-[30px] text-[13px] text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant focus:border-primary focus:outline-none transition-colors"
+                className="w-full rounded bg-surface-container-highest/50 backdrop-blur-md px-sm py-[5px] pl-[30px] text-[13px] text-on-surface placeholder:text-on-surface-variant/40 border border-outline-variant/40 focus:border-primary focus:outline-none transition-all duration-300 hover:border-outline-variant hover-glow"
               />
               <span className="material-symbols-outlined absolute left-[8px] top-1/2 -translate-y-1/2 text-[14px] text-on-surface-variant">
                 search
@@ -74,7 +74,7 @@ export function DashboardHeader() {
             <button
               type="submit"
               disabled={!trainQuery.trim() || isFetchingTrain}
-              className="rounded bg-surface-container px-sm py-[5px] text-[12px] font-semibold uppercase tracking-wider text-on-surface-variant border border-outline-variant transition-colors hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded bg-surface-container-highest/50 backdrop-blur-md px-sm py-[5px] text-[12px] font-semibold uppercase tracking-wider text-on-surface border border-outline-variant/40 transition-all duration-300 hover:border-primary hover:text-primary hover-glow disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {isFetchingTrain ? (
                 <span className="material-symbols-outlined animate-spin text-[14px]">sync</span>

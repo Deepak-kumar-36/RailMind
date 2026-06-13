@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: railmind-backend
+    env: node
+    buildCommand: "npm install && npm run build --workspace shared && npm run build --workspace backend"
+    startCommand: "npm run start --workspace backend"
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_ORIGIN
+        value: "*"
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false

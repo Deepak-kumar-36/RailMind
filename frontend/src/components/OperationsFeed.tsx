@@ -37,7 +37,7 @@ export function OperationsFeed() {
   /* ── Empty state ── */
   if (!activeIncidentType) {
     return (
-      <div className="flex h-full flex-col bg-surface-container-lowest">
+      <div className="flex h-full flex-col glass-panel-heavy rounded-none border-0 border-l">
         <div className="shrink-0 border-b border-outline-variant bg-surface-container-low px-md py-sm">
           <h2 className="text-label-sm uppercase tracking-widest text-on-surface-variant">
             Operations Feed
@@ -62,7 +62,7 @@ export function OperationsFeed() {
 
   /* ── Active state with tabs ── */
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-surface-container-lowest relative">
+    <div className="flex h-full flex-col overflow-hidden glass-panel-heavy rounded-none border-0 border-l relative">
       {dispatchSuccess && (
         <div className="absolute top-4 right-4 bg-status-safe text-surface-container-lowest px-4 py-2 rounded shadow-lg text-xs font-semibold uppercase tracking-widest z-50 animate-fade-in flex items-center gap-2">
           <span className="material-symbols-outlined text-base">check_circle</span>
@@ -70,7 +70,7 @@ export function OperationsFeed() {
         </div>
       )}
       {/* Panel Header */}
-      <div className="shrink-0 border-b border-outline-variant bg-surface-container-low px-md py-sm">
+      <div className="shrink-0 border-b border-outline-variant/30 bg-surface-container-lowest/40 px-md py-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-label-sm uppercase tracking-widest text-on-surface-variant flex items-center gap-xs">
             <span className="inline-block h-[6px] w-[6px] animate-pulse rounded-full bg-status-critical" />
@@ -88,7 +88,7 @@ export function OperationsFeed() {
       </div>
 
       {/* Tab Bar */}
-      <div className="shrink-0 flex border-b border-outline-variant bg-surface-container-low">
+      <div className="shrink-0 flex border-b border-outline-variant/30 bg-surface-container-lowest/40">
         {TABS.map((tab) => (
           <button
             key={tab.key}
@@ -115,7 +115,7 @@ export function OperationsFeed() {
 
       {/* Footer: Dispatch + Report Buttons */}
       {!isProcessing && operationalRecs && (
-        <div className="shrink-0 border-t border-outline-variant p-md space-y-[6px]">
+        <div className="shrink-0 border-t border-outline-variant/30 p-md space-y-[6px]">
           <button
             onClick={handleDispatch}
             className="flex w-full items-center justify-center gap-sm rounded bg-primary py-sm text-[13px] font-semibold text-on-primary transition-opacity hover:opacity-90"
@@ -153,7 +153,7 @@ function ActionsTab({
   return (
     <div className="animate-fade-in space-y-md">
       {/* Priority badge */}
-      <div className="flex items-center justify-between rounded bg-surface-container px-sm py-[6px]">
+      <div className="flex items-center justify-between rounded glass-panel inner-glow px-sm py-[6px]">
         <span className="text-[11px] text-on-surface-variant">Priority</span>
         <span className="text-[12px] font-bold uppercase tracking-wider text-status-critical">
           {recs.priority}
@@ -165,7 +165,7 @@ function ActionsTab({
         {recs.actions.map((act, i) => (
           <div
             key={i}
-            className="flex items-start gap-sm rounded bg-surface-container px-sm py-[6px]"
+            className="flex items-start gap-sm rounded glass-panel px-sm py-[6px] hover-glow transition-all duration-300"
           >
             <span className="material-symbols-outlined mt-[1px] text-[14px] text-primary">
               check_circle
@@ -177,7 +177,7 @@ function ActionsTab({
 
       {/* Confidence + Outcome */}
       <div className="grid grid-cols-2 gap-sm">
-        <div className="rounded bg-surface-container p-sm">
+        <div className="rounded glass-panel inner-glow p-sm hover-glow transition-all duration-300">
           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
             Confidence
           </p>
@@ -185,7 +185,7 @@ function ActionsTab({
             {recs.confidence}%
           </p>
         </div>
-        <div className="rounded bg-surface-container p-sm">
+        <div className="rounded glass-panel inner-glow p-sm hover-glow transition-all duration-300">
           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
             Expected Outcome
           </p>
@@ -226,7 +226,7 @@ function DriversTab({
     <div className="animate-fade-in space-y-sm">
       {/* Language Toggle */}
       {translatedNotifications && (
-        <div className="flex items-center gap-[4px] rounded bg-surface-container p-[3px]">
+        <div className="flex items-center gap-[4px] rounded glass-panel p-[3px]">
           {(["en", "hi", "regional"] as const).map((l) => (
             <button
               key={l}
@@ -253,7 +253,7 @@ function DriversTab({
         {(currentNotifications || notifications).map((n, i) => (
           <div
             key={i}
-            className="rounded bg-surface-container px-sm py-[6px]"
+            className="rounded glass-panel px-sm py-[6px] hover-glow transition-all duration-300"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-xs">
@@ -322,7 +322,7 @@ function ExplainTab({
   return (
     <div className="animate-fade-in space-y-md">
       {data.map((exp, i) => (
-        <div key={i} className="rounded border-l-2 border-primary bg-surface-container p-sm">
+        <div key={i} className="rounded border-l-2 border-primary glass-panel p-sm hover-glow transition-all duration-300">
           <p className="text-[13px] font-semibold text-on-surface">{exp.decision}</p>
           <div className="mt-xs space-y-[3px] text-[12px] text-on-surface-variant">
             <p>

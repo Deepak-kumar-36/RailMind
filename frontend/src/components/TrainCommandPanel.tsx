@@ -7,9 +7,9 @@ export function TrainCommandPanel() {
   const { activeTrain, activeIncidentType, triggerTrainIncident, isProcessing } = useTrainIntel();
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-surface-container-lowest">
+    <div className="flex h-full flex-col overflow-hidden glass-panel-heavy rounded-none border-0 border-r">
       {/* Panel Header */}
-      <div className="shrink-0 border-b border-outline-variant bg-surface-container-low px-md py-sm">
+      <div className="shrink-0 border-b border-outline-variant/30 bg-surface-container-lowest/40 px-md py-sm">
         <h2 className="text-label-sm uppercase tracking-widest text-on-surface-variant">
           Command Center
         </h2>
@@ -20,7 +20,7 @@ export function TrainCommandPanel() {
         {!activeTrain ? (
           /* Awaiting state */
           <div className="flex h-full flex-col items-center justify-center px-lg text-center">
-            <div className="mb-md rounded-full bg-surface-container p-lg">
+            <div className="mb-md rounded-full glass-panel inner-glow p-lg">
               <span className="material-symbols-outlined text-[36px] text-on-surface-variant opacity-50">
                 satellite_alt
               </span>
@@ -35,7 +35,7 @@ export function TrainCommandPanel() {
         ) : (
           <>
             {/* ── TELEMETRY SECTION ── */}
-            <div className="border-b border-outline-variant px-md py-md">
+            <div className="border-b border-outline-variant/30 px-md py-md">
               <div className="mb-sm flex items-baseline justify-between">
                 <div>
                   <h3 className="text-[22px] font-semibold tabular-nums tracking-tight text-on-surface">
@@ -73,7 +73,7 @@ export function TrainCommandPanel() {
             </div>
 
             {/* ── ROUTE PROGRESS ── */}
-            <div className="border-b border-outline-variant px-md py-md">
+            <div className="border-b border-outline-variant/30 px-md py-md">
               <p className="mb-sm text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
                 Route Progress
               </p>
@@ -125,7 +125,7 @@ export function TrainCommandPanel() {
               </p>
 
               {activeIncidentType ? (
-                <div className="rounded border border-status-critical/40 bg-status-critical/5 px-md py-sm">
+                <div className="rounded border border-status-critical/40 bg-status-critical/10 glass-panel px-md py-sm shadow-[0_0_15px_rgba(239,68,68,0.2)]">
                   <div className="flex items-center gap-xs">
                     <span className="material-symbols-outlined text-[18px] text-status-critical animate-pulse">
                       warning
@@ -149,7 +149,7 @@ export function TrainCommandPanel() {
                     <button
                       key={scenario.type}
                       onClick={() => triggerTrainIncident(scenario.type)}
-                      className="group flex w-full items-center gap-sm rounded px-sm py-[6px] text-left transition-colors hover:bg-surface-container"
+                      className="group flex w-full items-center gap-sm rounded px-sm py-[6px] text-left transition-all duration-300 hover:bg-surface-container/50 hover:pl-md hover:bg-surface-container-highest/50 border border-transparent hover:border-outline-variant/30"
                     >
                       <span className="material-symbols-outlined text-[16px] text-on-surface-variant transition-colors group-hover:text-status-critical">
                         {scenario.icon}
@@ -198,7 +198,7 @@ function WeatherSection() {
   };
 
   return (
-    <div className="border-b border-outline-variant px-md py-md">
+    <div className="border-b border-outline-variant/30 px-md py-md">
       <div className="mb-sm flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-on-surface-variant">
           Weather Intel
@@ -214,7 +214,7 @@ function WeatherSection() {
             key={i}
             className={`rounded px-sm py-[5px] border ${
               sw.riskLevel === "safe"
-                ? "bg-surface-container border-transparent"
+                ? "glass-panel inner-glow border-transparent"
                 : riskBg[sw.riskLevel]
             }`}
           >
