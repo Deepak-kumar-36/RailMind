@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTrainIntel } from "@/lib/IncidentContext";
+import { SOCKET_URL } from "@/lib/socket";
 
 type Tab = "actions" | "drivers" | "timeline" | "explain";
 
@@ -125,7 +126,7 @@ export function OperationsFeed() {
           </button>
           {activeIncidentId && (
             <a
-              href={`http://localhost:4000/api/reports/${activeIncidentId}/pdf`}
+              href={`${SOCKET_URL}/api/reports/${activeIncidentId}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-sm rounded border border-outline-variant bg-surface-container py-sm text-[13px] font-semibold text-on-surface transition-colors hover:border-primary hover:text-primary"
