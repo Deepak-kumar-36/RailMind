@@ -21,6 +21,16 @@ setSocketIoInstance(io);
 
 app.use(cors({ origin: env.frontendOrigin }));
 app.use(express.json());
+
+// Health-check endpoint
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "RailMind API",
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use("/api", createApiRouter());
 
 registerSocketHandlers(io);

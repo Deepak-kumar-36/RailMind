@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { env } from "../config/env";
 import type { 
   IncidentType, TrainRealData,
@@ -12,14 +12,14 @@ export type TrainIntelligenceResponse = {
   explainability: Explainability[];
 };
 
-export async function analyzeTrainIncidentWithGemini(
+export async function analyzeTrainIncidentWithAI(
   incidentType: IncidentType,
   trainData: TrainRealData,
   impactData: CalculatedImpactData,
   weatherSummary?: string
 ): Promise<TrainIntelligenceResponse> {
-  if (!env.geminiApiKey) {
-    console.log("[Gemini] No API key provided. Using simulated fallback.");
+  if (!env.groqApiKey) {
+    console.log("[Groq Agent] No API key provided. Using simulated fallback.");
     return generateFallback(incidentType, trainData, impactData);
   }
 
@@ -27,10 +27,12 @@ export async function analyzeTrainIncidentWithGemini(
   const timeString = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
   const dateString = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
 
-  const ai = new GoogleGenAI({ apiKey: env.geminiApiKey });
+  const ai = new OpenAI({
+    baseURL: "https://api.groq.com/openai/v1",
+    apiKey: env.groqApiKey,
+  });
 
-  const prompt = `
-You are the RAILMIND Emergency Intelligence Agent.
+  const prompt = `You are the RAILMIND Emergency Intelligence Agent.
 A disaster incident has been declared. We have already calculated the geographic and network impact.
 Your job is to provide Operational Recommendations, a Predictive Forecast, and Explainability for your decisions.
 Provide time-sensitive and geographically relevant instructions.
@@ -50,83 +52,55 @@ Affected Stations: ${impactData.impactAnalysis.affectedStations.join(", ")}
 Nearby Trains: ${impactData.impactAnalysis.nearbyTrains.join(", ")}
 Risk Level: ${impactData.impactAnalysis.riskLevel}
 
-${weatherSummary ? `WEATHER CONDITIONS:\n${weatherSummary}\n\nIMPORTANT: Factor weather conditions into your recommendations. If there are weather alerts, include specific weather-related safety instructions for train drivers.` : ''}
+${weatherSummary ? `WEATHER CONDITIONS:\n${weatherSummary}\n\nIMPORTANT: Factor weather conditions into your recommendations.` : ''}
 
 You must return ONLY a valid JSON object matching the exact structure below. Do not include markdown formatting like \`\`\`json.
 
 {
   "operationalRecs": {
     "priority": "Critical" | "High" | "Medium" | "Low",
-    "actions": [string],
-    "confidence": number,
-    "expectedOutcome": string
+    "actions": ["Action 1", "Action 2"],
+    "confidence": 95,
+    "expectedOutcome": "Outcome description"
   },
   "predictiveForecast": [
     {
       "timeframe": "15min" | "30min" | "60min" | "120min",
-      "networkImpact": string,
-      "affectedTrains": number,
-      "expectedDelays": string,
-      "recoveryForecast": string
+      "networkImpact": "Impact description",
+      "affectedTrains": 5,
+      "expectedDelays": "45m",
+      "recoveryForecast": "Recovery description"
     }
   ],
   "explainability": [
     {
-      "decision": string,
-      "reason": string,
-      "confidence": number,
-      "expectedImpact": string
+      "decision": "Decision description",
+      "reason": "Reason for decision",
+      "confidence": 95,
+      "expectedImpact": "Impact of decision"
     }
   ]
 }
 `;
 
-  // Model fallback chain — try multiple models if one is overloaded
-  const MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-  const MAX_RETRIES = 2;
-  
-  for (const model of MODELS) {
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        console.log(`[Gemini] Calling ${model} (attempt ${attempt + 1}) for ${incidentType} on train ${trainData.trainNumber}...`);
-        const response = await ai.models.generateContent({
-          model,
-          contents: prompt,
-          config: {
-            responseMimeType: "application/json",
-          }
-        });
+  try {
+    console.log(`[Groq Agent] Calling Llama 3 (llama-3.1-8b-instant) for ${incidentType} on train ${trainData.trainNumber}...`);
+    const response = await ai.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+    });
 
-        const text = response.text || "";
-        const parsed = JSON.parse(text) as TrainIntelligenceResponse;
+    const text = response.choices[0]?.message?.content || "";
+    const parsed = JSON.parse(text) as TrainIntelligenceResponse;
 
-        console.log(`[Gemini] ✅ Successfully generated response via ${model} for ${trainData.trainNumber}`);
-        return parsed;
-      } catch (error: any) {
-        const status = error?.status || error?.httpStatusCode;
-        const isRetryable = status === 503 || status === 429 || status === 500;
-        
-        if (isRetryable && attempt < MAX_RETRIES) {
-          const backoffMs = 1000 * Math.pow(2, attempt); // 1s, 2s
-          console.warn(`[Gemini] ${model} returned ${status}. Retrying in ${backoffMs}ms...`);
-          await new Promise(r => setTimeout(r, backoffMs));
-          continue;
-        }
-        
-        if (isRetryable) {
-          console.warn(`[Gemini] ${model} exhausted retries. Trying next model...`);
-          break; // move to next model
-        }
-        
-        // Non-retryable error (e.g. bad JSON parse, 400 bad request)
-        console.error(`[Gemini] ${model} failed with non-retryable error:`, error.message || error);
-        break; // move to next model
-      }
-    }
+    console.log(`[Groq Agent] ✅ Successfully generated response via Llama 3 for ${trainData.trainNumber}`);
+    return parsed;
+  } catch (error: any) {
+    console.error(`[Groq Agent] failed:`, error.message || error);
+    return generateFallback(incidentType, trainData, impactData);
   }
-
-  console.error("[Gemini] All models exhausted. Using intelligent fallback.");
-  return generateFallback(incidentType, trainData, impactData);
 }
 
 function generateFallback(type: IncidentType, train: TrainRealData, impact: CalculatedImpactData): TrainIntelligenceResponse {

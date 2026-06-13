@@ -7,22 +7,26 @@ import { env } from "../config/env";
  * Falls back to MOCK_TRAIN_DATABASE if train is not found or API fails.
  */
 export async function fetchSimulatedTrainData(trainNumber: string): Promise<TrainRealData> {
-  if (env.rapidApiKey) {
-    try {
-      console.log(`[RailwayAPI] Fetching real data for train ${trainNumber} from RapidAPI...`);
-      const response = await fetch(`https://irctc1.p.rapidapi.com/api/v1/getTrainSchedule?trainNo=${trainNumber}`, {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': env.rapidApiKey,
-          'x-rapidapi-host': 'irctc1.p.rapidapi.com'
-        }
-      });
+  if (env.rapidApiKeys && env.rapidApiKeys.length > 0) {
+    let success = false;
+    
+    for (let i = 0; i < env.rapidApiKeys.length; i++) {
+      const apiKey = env.rapidApiKeys[i];
+      try {
+        console.log(`[RailwayAPI] Fetching real data for train ${trainNumber} using API Key #${i + 1}...`);
+        const response = await fetch(`https://irctc1.p.rapidapi.com/api/v1/getTrainSchedule?trainNo=${trainNumber}`, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': apiKey,
+            'x-rapidapi-host': 'irctc1.p.rapidapi.com'
+          }
+        });
 
-      if (response.ok) {
-        const json = (await response.json()) as any;
-        
-        if (json.status && json.data && json.data.route && json.data.route.length > 0) {
-          console.log(`[RailwayAPI] ✅ Success! Loaded real route for ${json.data.train_name}`);
+        if (response.ok) {
+          const json = (await response.json()) as any;
+          
+          if (json.status && json.data && json.data.route && json.data.route.length > 0) {
+            console.log(`[RailwayAPI] ✅ Success! Loaded real route for ${json.data.train_name}`);
           
           // Map RapidAPI route to StationData with sta_min for calculation
           const mappedRoute = json.data.route
@@ -82,22 +86,28 @@ export async function fetchSimulatedTrainData(trainNumber: string): Promise<Trai
 
           const realRoute: StationData[] = mappedRoute.map(({ sta_min, ...rest }: any) => rest);
 
-          return {
-            trainNumber: json.data.train_number || trainNumber,
-            trainName: json.data.train_name,
-            runningStatus: "on-time",
-            currentPosition,
-            route: realRoute
-          };
+            return {
+              trainNumber: json.data.train_number || trainNumber,
+              trainName: json.data.train_name,
+              runningStatus: "on-time",
+              currentPosition,
+              route: realRoute
+            };
+          } else {
+            console.warn(`[RailwayAPI] Train ${trainNumber} not found in live API.`);
+          }
+        } else if (response.status === 429) {
+          console.warn(`[RailwayAPI] API Key #${i + 1} exhausted (429). Rotating to next key...`);
+          continue; // Try next key
         } else {
-          console.warn(`[RailwayAPI] Train ${trainNumber} not found in live API. Falling back to mock.`);
+          console.warn(`[RailwayAPI] API returned status ${response.status}. Rotating to next key if available...`);
         }
-      } else {
-        console.warn(`[RailwayAPI] API returned status ${response.status}. Falling back to mock.`);
+      } catch (err) {
+        console.error(`[RailwayAPI] Network error using key #${i + 1}:`, err);
       }
-    } catch (err) {
-      console.error(`[RailwayAPI] Network error:`, err);
     }
+    
+    console.warn(`[RailwayAPI] All RapidAPI keys exhausted or failed. Falling back to mock data.`);
   } else {
     console.warn(`[RailwayAPI] No RAPIDAPI_KEY provided. Falling back to mock data.`);
   }

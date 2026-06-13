@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { env } from "../config/env";
 import type { DriverNotification } from "@railmind/shared";
 
@@ -48,7 +48,7 @@ export async function translateNotifications(
       : `ALERT: ${incidentType.toUpperCase()} reported on corridor. Reduce speed to 30 km/h. Monitor radio for updates.`
   }));
 
-  if (!env.geminiApiKey) {
+  if (!env.groqApiKey) {
     // No AI available — return English only
     return {
       en: enNotifications,
@@ -59,7 +59,11 @@ export async function translateNotifications(
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey: env.geminiApiKey });
+    const ai = new OpenAI({
+      baseURL: "https://api.groq.com/openai/v1",
+      apiKey: env.groqApiKey,
+    });
+    
     const messages = enNotifications.map(n => n.message);
 
     const prompt = `You are a railway emergency communication translator.
@@ -70,19 +74,20 @@ Translate each of the following emergency railway notifications into TWO languag
 Input messages:
 ${messages.map((m, i) => `${i + 1}. ${m}`).join("\n")}
 
-Return ONLY a valid JSON object (no markdown):
+Return ONLY a valid JSON object matching this exact structure (no markdown):
 {
-  "hi": ["hindi translation 1", "hindi translation 2", ...],
-  "regional": ["${regionalLanguage} translation 1", "${regionalLanguage} translation 2", ...]
+  "hi": ["hindi translation 1", "hindi translation 2"],
+  "regional": ["${regionalLanguage} translation 1", "${regionalLanguage} translation 2"]
 }`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      config: { responseMimeType: "application/json" }
+    const response = await ai.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
     });
 
-    const text = response.text || "";
+    const text = response.choices[0]?.message?.content || "";
     const parsed = JSON.parse(text) as { hi: string[]; regional: string[] };
 
     console.log(`[Translator] ✅ Translated ${messages.length} alerts to Hindi + ${regionalLanguage}`);
@@ -91,11 +96,11 @@ Return ONLY a valid JSON object (no markdown):
       en: enNotifications,
       hi: enNotifications.map((n, i) => ({
         ...n,
-        message: parsed.hi[i] || n.message
+        message: parsed?.hi?.[i] || n.message
       })),
       regional: enNotifications.map((n, i) => ({
         ...n,
-        message: parsed.regional[i] || n.message
+        message: parsed?.regional?.[i] || n.message
       })),
       regionalLanguage
     };

@@ -5,7 +5,7 @@ import type {
   TrainRealData,
   MapIncident,
 } from "@railmind/shared";
-import { analyzeTrainIncidentWithGemini } from "./gemini";
+import { analyzeTrainIncidentWithAI } from "./agent";
 import { calculateImpact } from "./impactEngine";
 import { getRouteWeather } from "./weatherService";
 import { translateNotifications } from "./translator";
@@ -55,7 +55,7 @@ export async function orchestrateTrainIncident(
   // Helper to emit and save timeline
   const emitTimeline = async (id: string, desc: string) => {
     const time = formatTime();
-    const event = { id, timestamp: time, description: desc };
+    const event = { id: `${incidentId}-${id}`, timestamp: time, description: desc };
     io.emit("timeline:event", event);
     try {
       await saveTimelineEvent(incidentId, event);
@@ -98,7 +98,7 @@ export async function orchestrateTrainIncident(
 
   // Step 3: AI Recommendations & Explainability (Gemini) — now with weather
   io.emit("train_intel:status", "Formulating operational recommendations (AI)...");
-  const aiAnalysis = await analyzeTrainIncidentWithGemini(incidentType, trainData, impactData, weatherReport.summary);
+  const aiAnalysis = await analyzeTrainIncidentWithAI(incidentType, trainData, impactData, weatherReport.summary);
   await emitTimeline("4", "AI Decision Engine Completed");
   io.emit("train_intel:ops", aiAnalysis.operationalRecs);
   io.emit("train_intel:explain", aiAnalysis.explainability);
